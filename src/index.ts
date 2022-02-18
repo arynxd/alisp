@@ -1,9 +1,11 @@
-import { Interpreter } from "./lang/Interpreter"
+import { execute } from "./lang/runtime";
 
-const src = `\
-    (def "no exist" "exist")
-    (print (get "no exist"))
-`
+const src = `
+    (strict)
+\\
+    (import "src/test")
 
-const interpreter = new Interpreter(src)
-interpreter.interpret()
+    (func)
+`;
+
+execute(src);

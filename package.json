@@ -1,18 +1,21 @@
 {
-  "name": "alisp",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "start": "node dist",
-    "watch": "tsc -w",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "devDependencies": {
-    "@types/node": "^16.9.2",
-    "typescript": "^4.4.3"
-},
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+    "name": "alisp",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "node dist",
+        "watch": "tsc -w",
+        "fmt": "prettier --write . && tsc --pretty"
+    },
+    "devDependencies": {
+        "@types/node": "^16.9.2",
+        "typescript": "^4.4.3"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "prettier": "^2.5.1"
+    }
 }
