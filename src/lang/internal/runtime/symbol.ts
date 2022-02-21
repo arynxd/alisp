@@ -1,5 +1,7 @@
+
 import type { FunctionExecutionContext } from "../../runtime";
-import type { Runtime } from "./Runtime";
+import { Module } from "./module";
+import type { Runtime } from "./runtime";
 
 export class SymbolTable {
     private readonly symbols: Map<string, Symbol>;
@@ -44,6 +46,12 @@ export function isLispFunction(
     );
 }
 
+export function isModule(
+    mod: Symbol | Module
+): mod is Module {
+    return mod instanceof Module
+}
+
 export type LispFunction = {
     name: string;
     execute: (ctx: FunctionExecutionContext) => Symbol;
@@ -56,4 +64,5 @@ export type Symbol =
     | null
     | void
     | LispFunction
+    | Module
     | Symbol[];

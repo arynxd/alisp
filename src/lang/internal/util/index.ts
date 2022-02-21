@@ -4,7 +4,7 @@ import {
     LiteralExpr,
     SymbolExpr,
 } from "../parse/Expr";
-import type { Runtime } from "../runtime/Runtime";
+import type { Runtime } from "../runtime/runtime";
 
 export function stringify(
     v: unknown,

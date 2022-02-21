@@ -8,19 +8,20 @@ import {
 } from "../runtime/symbol";
 import {
     isListExpr,
-    isNonEmptyString
+    isNonEmptyString,
+    isSymbolExpr
 } from "../util";
 
 function fun(ctx: FunctionExecutionContext) {
     /*
-        (fun "name" (arg, arg2) (
+        (fun name (arg, arg2) (
             (print arg arg2)
         ))
     */
 
     const _name = ctx.arg(0)
 
-    if (!(_name instanceof SymbolExpr)) {
+    if (!isSymbolExpr(_name)) {
         return ctx.error('runtime')(
             "'fun' name was not a valid symbol"
         )
@@ -28,7 +29,7 @@ function fun(ctx: FunctionExecutionContext) {
     
     const name = _name.wrappingToken.identifier
     
-    if (!isNonEmptyString(name)) {
+    if (!isNonEmptyString(name) || name.includes(ctx.runtime.moduleDenotion)) {
         return ctx.error("runtime")(
             "'fun' name was not a valid symbol"
         );
@@ -68,7 +69,7 @@ function fun(ctx: FunctionExecutionContext) {
 
             if (ctx.runtime.strict && value === undefined) {
                 return closureCtx.error("runtime")(
-                    `Argument ${param.wrappingToken.identifier} missing from args list`
+                    `argument ${param.wrappingToken.identifier} missing from args list`
                 );
             }
 

@@ -1,6 +1,6 @@
 import { readdir } from "fs/promises";
 import { resolve } from "path";
-import type { Runtime } from "./Runtime";
+import type { Runtime } from "./runtime";
 import { isLispFunction, LispFunction } from "./symbol";
 
 export async function loadStdLib(
@@ -25,13 +25,8 @@ export async function loadStdLib(
 
         if (!isLispFunction(obj)) {
             runtime.errorHandler.report("internal")(
-                `Std module ${path} was not a LispFunction`
+                `std module ${path} was not a LispFunction`
             );
-        }
-
-        if (obj.name.startsWith("_")) {
-            // allow use of reserved TS word by means of _ prefix
-            obj.name = obj.name.slice(1);
         }
 
         out.push(obj);

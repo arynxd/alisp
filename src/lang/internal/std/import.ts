@@ -11,6 +11,10 @@ function _import(ctx: FunctionExecutionContext) {
         );
     }
 
+    if (ctx.runtime.moduleController.has(path)) {
+        return 
+    }
+
     let code: string;
 
     try {

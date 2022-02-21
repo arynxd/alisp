@@ -1,6 +1,6 @@
 import { exit } from "process";
 import type { Token } from "./parse/Token";
-import type { Runtime } from "./runtime/Runtime";
+import type { Runtime } from "./runtime/runtime";
 
 export type ErrorType =
     | "syntax"
@@ -100,7 +100,7 @@ export class ErrorHandler {
 
                 while (entry) {
                     console.error(
-                        `  => ${entry.token.identifier} line ${entry.token.line} of ${entry.token.filePath}`
+                        `  ${entry.token.identifier} @ line ${entry.token.line} of ${entry.token.filePath}`
                     );
                     entry = this.runtime.callStack.pop();
                 }

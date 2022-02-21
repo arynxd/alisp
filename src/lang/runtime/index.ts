@@ -1,4 +1,4 @@
-import { Runtime } from "../internal/runtime/Runtime";
+import { Runtime } from "../internal/runtime/runtime";
 import { Parser } from "../internal/parse/Parser";
 import {
     isLispFunction,
@@ -24,6 +24,7 @@ export function execute(src: string) {
     runtime.currentSrc = src;
 
     const interpreter = new Interpreter(runtime);
+
     loadStdLib(runtime).then((std) => {
         std.forEach((fn) => {
             runtime.globalSymbols.set(fn.name, fn);
@@ -84,7 +85,7 @@ class Interpreter {
         }
 
         runtime.errorHandler.report("internal")(
-            `Unkown Expr ${expr}`
+            `unkown Expr ${expr}`
         );
     }
 
@@ -109,9 +110,6 @@ class Interpreter {
                     new StackEntry(head.wrappingToken)
                 );
 
-                const identifier =
-                    head.wrappingToken.identifier;
-
                 const maybeFn = this.evaluateSymbol(
                     head,
                     runtime
@@ -122,12 +120,8 @@ class Interpreter {
                     this.symbols
                 );
 
-                if (!isLispFunction(maybeFn)) {
-                    return runtime.errorHandler.report(
-                        "runtime"
-                    )(
-                        `Symbol ${identifier} was not a function`
-                    );
+                if (!isLispFunction(maybeFn)) {                    
+                    return maybeFn // return the value if we dont see a function
                 }
 
                 const ctx = new FunctionExecutionContext(
@@ -155,6 +149,31 @@ class Interpreter {
     }
 
     private evaluateSymbol(expr: SymbolExpr, runtime: Runtime) {
+        const name = expr.wrappingToken.identifier
+
+        if (name.includes(runtime.moduleDenotion)) {
+            // handle module lookup
+            const parts = name.split(runtime.moduleDenotion)
+
+            if (parts.length < 2) {
+                return runtime.errorHandler.report('runtime')(
+                    `symbol ${name} was invalid for module lookup`
+                )
+            }
+
+            const module = runtime.moduleController.get(parts[0])
+            const val = module.get(parts[1])
+            
+            if (!val) {
+                return runtime.errorHandler.report('runtime')(
+                    `symbol ${parts[1]} is not exported by ${parts[0]}`
+                )
+            }
+
+            return val
+        }
+
+
         return this.symbols.get(expr.wrappingToken.identifier);
     }
 }

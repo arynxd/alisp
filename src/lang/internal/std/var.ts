@@ -1,19 +1,13 @@
 import type { FunctionExecutionContext } from "../../runtime";
-import { isNonEmptyString, isValidSymbol } from "../util";
+import { isNonEmptyString, isSymbolExpr, isValidSymbol } from "../util";
 
 function _var(ctx: FunctionExecutionContext) {
-    const key = ctx.reduceOne(0);
+    const key = ctx.arg(0)
 
-    if (!isNonEmptyString(key)) {
-        return ctx.error("runtime")(
-            `'var' key was not a valid symbol`
-        );
-    }
-
-    if (!isValidSymbol(key)) {
-        return ctx.error("runtime")(
-            `'var' key was not a valid symbol`
-        );
+    if (!isSymbolExpr(key)) {
+        return ctx.error('runtime')(
+            `'var' key was not a valid symbol, got ${key}`
+        )
     }
 
     if (!ctx.has(1)) {
@@ -23,13 +17,14 @@ function _var(ctx: FunctionExecutionContext) {
     }
 
     const value = ctx.reduceOne(1);
+    
 
-    ctx.symbols.inheritedSymbols?.set(key, value);
+    ctx.symbols.inheritedSymbols?.set(key.wrappingToken.identifier, value);
 
     return value;
 }
 
 export const mod = {
-    name: "_var",
+    name: "var",
     func: _var,
 };

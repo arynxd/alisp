@@ -1,4 +1,4 @@
-import type { Runtime } from "../runtime/Runtime";
+import type { Runtime } from "../runtime/runtime";
 import {
     Expr,
     ListExpr,

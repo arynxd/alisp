@@ -1,8 +1,0 @@
-(fun main2 () (
-    (print 1)
-))
-
-(fun main () (
-    (main2)
-))
-

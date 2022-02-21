@@ -1,5 +1,5 @@
 import { execute } from "./lang/runtime";
 
-const src = `(import "src/main") (main)`;
+const src = `(import "examples/main.lisp") (main/main)`;
 
 execute(src);
