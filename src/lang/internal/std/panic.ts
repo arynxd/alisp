@@ -1,7 +1,7 @@
 import type { FunctionExecutionContext } from "../../runtime";
 
 function panic(ctx: FunctionExecutionContext) {
-    ctx.error("panic")(ctx.reduceOne(0)?.toString() ?? "nil");
+    ctx.error("panic")(ctx.reduceOne(0)?.toString() ?? "nptr");
 }
 
 export const mod = {

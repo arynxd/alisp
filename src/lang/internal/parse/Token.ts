@@ -4,7 +4,7 @@ export type TokenType =
     | "Symbol"
     | "String"
     | "Integer"
-    | "Nil"
+    | "NullPtr"
     | "Eof";
 
 export class Token {

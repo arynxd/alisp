@@ -24,7 +24,7 @@ export function stringify(
             .map((a) => stringify(a, runtime))
             .join(" ")})`;
 
-    if (v === null || v === undefined) return "nil";
+    if (v === null || v === undefined) return "nptr";
 
     return runtime.errorHandler.report("internal")(
         `Attempted to stringify unhandled type of value ${v}`

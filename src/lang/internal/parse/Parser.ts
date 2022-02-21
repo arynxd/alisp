@@ -44,7 +44,7 @@ export class Parser {
 
     private nextAsArgument() {
         if (
-            this.advanceWhenHasAny("Integer", "String", "Nil")
+            this.advanceWhenHasAny("Integer", "String", "NullPtr")
         ) {
             return new LiteralExpr(
                 this.previous(),

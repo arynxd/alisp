@@ -166,7 +166,7 @@ export class Lexer {
     private keyWordOrUndefined(
         maybeKeyword: string
     ): TokenType | undefined {
-        const lookup = new Map([["nil", "Nil"]]);
+        const lookup = new Map([["nptr", "NullPtr"]]);
 
         return lookup.get(maybeKeyword) as
             | TokenType

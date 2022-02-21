@@ -10,7 +10,7 @@ export class Runtime {
     private _strict = false;
     private _maxStackSize = 5;
     private _currentFile = "<anonymous>";
-    private _currentSrc = "<nil>";
+    private _currentSrc = "<nptr>";
 
     public get callStack() {
         return this._callStack;
