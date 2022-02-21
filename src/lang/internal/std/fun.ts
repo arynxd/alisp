@@ -22,36 +22,37 @@ function fun(ctx: FunctionExecutionContext) {
     const name = ctx.reduceOne(0);
 
     if (!isNonEmptyString(name)) {
-        ctx.error(
-            "'fun' name was not a filled string",
-            "runtime"
+        return ctx.error("runtime")(
+            "'fun' name was not a valid symbol"
         );
     }
 
     if (!isValidSymbol(name)) {
-        ctx.error(
-            "'fun' name was not a valid symbol",
-            "runtime"
+        return ctx.error("runtime")(
+            "'fun' name was not a valid symbol"
         );
     }
 
     const args = ctx.arg(1);
 
     if (!isListExpr(args)) {
-        ctx.error("'fun' args was not a list", "runtime");
+        return ctx.error("runtime")(
+            "'fun' args was not a list"
+        );
     }
 
     const body = ctx.arg(2);
 
     if (!isListExpr(body)) {
-        ctx.error("'fun' args body not a list", "runtime");
+        return ctx.error("runtime")(
+            "'fun' args body not a list"
+        );
     }
 
     for (const arg of args.list) {
         if (!(arg instanceof SymbolExpr)) {
-            ctx.error(
-                `'fun' arg was not a symbol, got ${arg.wrappingToken.identifier} instead`,
-                "runtime"
+            return ctx.error("runtime")(
+                `'fun' arg was not a symbol, got ${arg.wrappingToken.identifier} instead`
             );
         }
     }
@@ -65,13 +66,13 @@ function fun(ctx: FunctionExecutionContext) {
             const value = closureCtx.reduceOne(index);
 
             if (ctx.runtime.strict && value === undefined) {
-                closureCtx.error(
-                    `Argument ${param.wrappingToken.identifier} missing from args list`,
-                    "runtime"
+                return closureCtx.error("runtime")(
+                    `Argument ${param.wrappingToken.identifier} missing from args list`
                 );
             }
 
             closure.set(param.wrappingToken.identifier, value);
+            return undefined;
         });
 
         const old = closureCtx.symbols;
@@ -91,6 +92,7 @@ function fun(ctx: FunctionExecutionContext) {
     };
 
     ctx.symbols.inheritedSymbols?.set(name, wrappedFn);
+    return undefined;
 }
 
 export const mod = {

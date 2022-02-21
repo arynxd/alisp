@@ -1,7 +1,7 @@
 import type { Token } from "../internal/parse/Token";
 
 export class CallStack {
-    public callAmount = 0
+    public callAmount = 0;
     private readonly stack: StackEntry[] = [];
 
     public push(entry: StackEntry) {

@@ -1,9 +1,11 @@
 import { readdir } from "fs/promises";
 import { resolve } from "path";
-import type { ReportErrorFunc } from "../error";
+import type { Runtime } from "./Runtime";
 import { isLispFunction, LispFunction } from "./symbol";
 
-export async function loadStdLib(reportError: ReportErrorFunc): Promise<LispFunction[]> {
+export async function loadStdLib(
+    runtime: Runtime
+): Promise<LispFunction[]> {
     let paths = await readdir(resolve(__dirname, "..", "std"));
     paths = paths.filter((p) => p.endsWith(".js"));
 
@@ -22,7 +24,9 @@ export async function loadStdLib(reportError: ReportErrorFunc): Promise<LispFunc
         };
 
         if (!isLispFunction(obj)) {
-            reportError(`Std module ${path} was not a LispFunction`, 'internal')
+            runtime.errorHandler.report("internal")(
+                `Std module ${path} was not a LispFunction`
+            );
         }
 
         if (obj.name.startsWith("_")) {

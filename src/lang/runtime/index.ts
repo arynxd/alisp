@@ -1,7 +1,3 @@
-import type {
-    ErrorType,
-    ReportErrorFunc,
-} from "../internal/error";
 import { Runtime } from "../internal/runtime/Runtime";
 import { Parser } from "../internal/parse/Parser";
 import {
@@ -19,21 +15,15 @@ import {
 } from "../internal/parse/Expr";
 import { stringify } from "../internal/util";
 import { loadStdLib } from "../internal/runtime/std";
-import { CallStack, StackEntry } from "./callstack";
+import { StackEntry } from "./callstack";
 import { Token } from "../internal/parse/Token";
-import { exit } from "process";
 
 export function execute(src: string) {
     const runtime = new Runtime();
     runtime.currentFile = "<anonymous>";
 
     const interpreter = new Interpreter(runtime);
-    loadStdLib((message) => {
-        console.error(
-            `an error has occurred when loading the stdlib : ${message}`
-        );
-        exit(1);
-    }).then((std) => {
+    loadStdLib(runtime).then((std) => {
         std.forEach((fn) => {
             runtime.globalSymbols.set(fn.name, fn);
         });
@@ -50,77 +40,14 @@ class Interpreter {
         this.runtime.globalSymbols
     );
 
-    private callStack = new CallStack();
-
     public interpret(src: string) {
-        const reportError: ReportErrorFunc = (
-            message,
-            type,
-            maybeSrc,
-            maybeToken
-        ) => {
-            console.error();
-
-            if (type === "panic") {
-                console.error(`panic! : ${message}`);
-            } else {
-                console.error(
-                    `a ${type} error has occurred : ${message}`
-                );
-            }
-
-            let entry = this.callStack.pop();
-
-            if (!entry) {
-                if (maybeToken && maybeSrc && (type === 'syntax' || type === 'internal')) {
-                    const snippet =
-                        src.split("\n")[maybeToken.line - 1];
-
-                    const arrows =
-                        " ".repeat(maybeToken.startCol) +
-                        "^".repeat(
-                            maybeToken.identifier.length
-                        );
-
-                    console.error(snippet);
-                    console.error(arrows);
-
-                    console.error(`(${maybeToken.line}) (${this.runtime.currentFile})`);
-                    
-                    exit(1);
-                }
-                console.error("stack was empty, this is a bug");
-                exit(1);
-            }
-
-            const snippet =
-                src.split("\n")[entry.token.line - 1];
-
-            const arrows =
-                " ".repeat(entry.token.startCol) +
-                "^".repeat(entry.token.identifier.length);
-
-            console.error(snippet);
-            console.error(arrows);
-
-            console.error("stack::");
-
-            while (entry) {
-                console.error(
-                    `  => ${entry.token.identifier} (${entry.token.line}) (${entry.filePath})`
-                );
-                entry = this.callStack.pop();
-            }
-            exit(1);
-        };
-
-        const lexer = new Lexer(src, reportError);
+        const lexer = new Lexer(src, this.runtime);
         const tokens = lexer.lex();
 
-        const parser = new Parser(tokens, reportError);
+        const parser = new Parser(tokens, this.runtime);
         const ast = parser.parse();
 
-        this.callStack.push(
+        this.runtime.callStack.push(
             new StackEntry(
                 this.runtime.currentFile,
                 new Token("StartList", "main", undefined, 0, 0)
@@ -128,49 +55,47 @@ class Interpreter {
         );
 
         const result = stringify(
-            this.evaluate(ast, reportError),
-            reportError
+            this.evaluate(ast, this.runtime),
+            this.runtime
         );
 
         console.log(`Result: ${result}`);
     }
 
-    public evaluate(
-        expr: Expr,
-        reportError: ReportErrorFunc
-    ): Symbol {
+    public evaluate(expr: Expr, runtime: Runtime): Symbol {
         if (!expr) {
             return undefined;
         }
 
         if (expr instanceof ListExpr) {
-            return this.evaluateList(expr, reportError);
+            return this.evaluateList(expr, runtime);
         } else if (expr instanceof LiteralExpr) {
             return this.evaluateLiteral(expr);
         } else if (expr instanceof SymbolExpr) {
-            return this.evaluateSymbol(expr, reportError);
+            return this.evaluateSymbol(expr, runtime);
         }
 
-        reportError(`Unkown Expr ${expr}`, "internal");
+        runtime.errorHandler.report("internal")(
+            `Unkown Expr ${expr}`
+        );
     }
 
-    private evaluateList(
-        expr: ListExpr,
-        reportError: ReportErrorFunc
-    ) {
+    private evaluateList(expr: ListExpr, runtime: Runtime) {
         if (
-            this.callStack.callAmount >=
+            this.runtime.callStack.callAmount >=
             this.runtime.maxStackSize
         ) {
-            reportError("Stack overflow", "runtime");
+            runtime.errorHandler.report("runtime")(
+                "Stack overflow"
+            );
         }
 
-        this.callStack.callAmount++;
+        this.runtime.callStack.callAmount++;
 
         const oldSymbols = this.symbols;
         const [head, ...exprs] = expr.list;
 
-        this.callStack.push(
+        this.runtime.callStack.push(
             new StackEntry(
                 this.runtime.currentFile,
                 head.wrappingToken
@@ -188,41 +113,38 @@ class Interpreter {
                     head.wrappingToken.identifier;
 
                 if (!this.symbols.has(identifier)) {
-                    reportError(
-                        `Symbol ${identifier} was not found`,
-                        "runtime"
+                    runtime.errorHandler.report("runtime")(
+                        `Symbol ${identifier} was not found`
                     );
                 }
 
                 const maybeFn = this.evaluateSymbol(
                     head,
-                    reportError
+                    runtime
                 );
 
                 if (isLispFunction(maybeFn)) {
                     const ctx = new FunctionExecutionContext(
                         this,
-                        this.runtime,
+                        runtime,
                         exprs,
-                        maybeFn,
-                        reportError
+                        maybeFn
                     );
 
                     return maybeFn.execute(ctx);
                 }
 
-                reportError(
-                    `Symbol ${identifier} was not a function`,
-                    "runtime"
+                runtime.errorHandler.report("runtime")(
+                    `Symbol ${identifier} was not a function`
                 );
             }
         } finally {
             this.symbols = oldSymbols;
-            this.callStack.pop();
+            this.runtime.callStack.pop(); // only pop after recursion has finished
         }
 
         return expr.list.map((ex) =>
-            this.evaluate(ex, reportError)
+            this.evaluate(ex, runtime)
         );
     }
 
@@ -230,15 +152,11 @@ class Interpreter {
         return expr.literal as Symbol;
     }
 
-    private evaluateSymbol(
-        expr: SymbolExpr,
-        reportError: ReportErrorFunc
-    ) {
+    private evaluateSymbol(expr: SymbolExpr, runtime: Runtime) {
         const id = expr.wrappingToken.identifier;
         if (!this.symbols.has(id)) {
-            reportError(
-                `Symbol '${id}' does not exist`,
-                "runtime"
+            runtime.errorHandler.report("runtime")(
+                `Symbol '${id}' does not exist`
             );
         }
         return this.symbols.get(id);
@@ -250,8 +168,7 @@ export class FunctionExecutionContext {
         private readonly interpreter: Interpreter,
         public readonly runtime: Runtime,
         private readonly exprs: Expr[],
-        private readonly fn: LispFunction,
-        public readonly reportError: ReportErrorFunc
+        private readonly fn: LispFunction
     ) {}
 
     get symbols() {
@@ -261,13 +178,13 @@ export class FunctionExecutionContext {
     public reduceOne(index: number) {
         return this.interpreter.evaluate(
             this.exprs[index],
-            this.reportError
+            this.runtime
         );
     }
 
     public reduceAll() {
         return this.exprs.map((ex) =>
-            this.interpreter.evaluate(ex, this.reportError)
+            this.interpreter.evaluate(ex, this.runtime)
         );
     }
 
@@ -280,10 +197,7 @@ export class FunctionExecutionContext {
     }
 
     public evaluate(expr: Expr): Symbol {
-        return this.interpreter.evaluate(
-            expr,
-            this.reportError
-        );
+        return this.interpreter.evaluate(expr, this.runtime);
     }
 
     public interpret(src: string) {
@@ -294,7 +208,8 @@ export class FunctionExecutionContext {
         this.interpreter.symbols = newSymbols;
     }
 
-    public error(message: string, type: ErrorType): never {
-        this.reportError(message, type);
-    }
+    public readonly error =
+        this.runtime.errorHandler.report.bind(
+            this.runtime.errorHandler
+        );
 }

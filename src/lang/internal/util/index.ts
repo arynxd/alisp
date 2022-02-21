@@ -1,14 +1,17 @@
-import type { ReportErrorFunc } from "../error";
 import {
     Expr,
     ListExpr,
     LiteralExpr,
     SymbolExpr,
 } from "../parse/Expr";
+import type { Runtime } from "../runtime/Runtime";
 
-export function stringify(v: unknown, reportError: ReportErrorFunc): string {
+export function stringify(
+    v: unknown,
+    runtime: Runtime
+): string {
     if (typeof v === "function")
-        return `fn ${v.name || "(anonymous)"}>`;
+        return `fn ${v.name || "(anonymous)"}`;
 
     if (typeof v === "string") return v.toString();
 
@@ -17,11 +20,15 @@ export function stringify(v: unknown, reportError: ReportErrorFunc): string {
     if (typeof v === "boolean") return v.toString();
 
     if (Array.isArray(v))
-        return `(${v.map(a => stringify(a, reportError)).join(" ")})`;
+        return `(${v
+            .map((a) => stringify(a, runtime))
+            .join(" ")})`;
 
     if (v === null || v === undefined) return "nil";
 
-    reportError(`Attempted to stringify unhandled type of value ${v}`, 'internal')
+    return runtime.errorHandler.report("internal")(
+        `Attempted to stringify unhandled type of value ${v}`
+    );
 }
 
 export function isListExpr(expr: Expr): expr is ListExpr {

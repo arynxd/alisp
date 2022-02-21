@@ -1,4 +1,4 @@
-import type { ReportErrorFunc } from "../error";
+import type { Runtime } from "../runtime/Runtime";
 import {
     Expr,
     ListExpr,
@@ -8,7 +8,10 @@ import {
 import { Token, TokenType } from "./Token";
 
 export class Parser {
-    constructor(private readonly tokens: Token[], private readonly reportError: ReportErrorFunc) {}
+    constructor(
+        private readonly tokens: Token[],
+        private readonly runtime: Runtime
+    ) {}
 
     private current = 0;
 
@@ -57,7 +60,10 @@ export class Parser {
             return this.nextAsExpression();
         }
 
-        this.reportError(`Unexected token ${this.peek().type}`, 'syntax')
+        return this.runtime.errorHandler.report("syntax")(
+            `Unexected token ${this.peek().type}`,
+            this.peek()
+        );
     }
 
     private advanceWhenHasAny(...types: TokenType[]) {
@@ -73,7 +79,10 @@ export class Parser {
     private requireNext(type: TokenType) {
         if (this.hasNext(type)) return this.advance();
 
-        this.reportError(`Expected ${type} found ${this.peek().type}`, 'syntax')
+        return this.runtime.errorHandler.report("syntax")(
+            `Expected ${type} found ${this.peek().type}`,
+            this.peek()
+        );
     }
 
     private advance() {
@@ -102,14 +111,20 @@ export class Parser {
                 stack.push(idx);
             } else if (token.type === "EndList") {
                 if (!stack.length) {
-                    this.reportError("Unmatched parantheses", 'syntax')
+                    this.runtime.errorHandler.report("syntax")(
+                        "Unmatched parantheses",
+                        this.peek()
+                    );
                 }
                 stack.pop();
             }
         });
 
         if (stack.length) {
-            this.reportError("Unmatched parantheses", 'syntax')
+            this.runtime.errorHandler.report("syntax")(
+                "Unmatched parantheses",
+                this.peek()
+            );
         }
     }
 }

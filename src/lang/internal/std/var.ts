@@ -5,15 +5,21 @@ function _var(ctx: FunctionExecutionContext) {
     const key = ctx.reduceOne(0);
 
     if (!isNonEmptyString(key)) {
-        ctx.error(`'var' key was not a valid symbol`, 'runtime')
+        return ctx.error("runtime")(
+            `'var' key was not a valid symbol`
+        );
     }
 
     if (!isValidSymbol(key)) {
-        ctx.error(`'var' key was not a valid symbol`, 'runtime')
+        return ctx.error("runtime")(
+            `'var' key was not a valid symbol`
+        );
     }
 
     if (!ctx.has(1)) {
-        ctx.error("'var' value was not provided", 'runtime')
+        return ctx.error("runtime")(
+            "'var' value was not provided"
+        );
     }
 
     const value = ctx.reduceOne(1);

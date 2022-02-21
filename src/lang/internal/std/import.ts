@@ -6,7 +6,9 @@ function _import(ctx: FunctionExecutionContext) {
     const path = ctx.reduceOne(0);
 
     if (!isNonEmptyString(path)) {
-        ctx.error("'import' path was not a string", 'runtime')
+        return ctx.error("runtime")(
+            "'import' path was not a string"
+        );
     }
 
     let code: string;
@@ -16,13 +18,17 @@ function _import(ctx: FunctionExecutionContext) {
             encoding: "ascii",
         });
     } catch (ex) {
-        ctx.error("Could not import " + path + " because " + ex, 'runtime')
+        return ctx.error("runtime")(
+            "Could not import " + path + " because " + ex
+        );
     }
 
     ctx.setSymbols(ctx.symbols.inheritedSymbols!);
 
-    ctx.runtime.currentFile = path
+    ctx.runtime.currentFile = path;
     ctx.interpret(code);
+
+    return undefined;
 }
 
 export const mod = {

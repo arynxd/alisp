@@ -1,11 +1,11 @@
-import type { ReportErrorFunc } from "../error";
+import type { Runtime } from "../runtime/Runtime";
 import { isValidSymbol } from "../util";
 import { Token, TokenType } from "./Token";
 
 export class Lexer {
     constructor(
         public readonly src: string,
-        private readonly reportError: ReportErrorFunc
+        private readonly runtime: Runtime
     ) {}
 
     private readonly tokens: Token[] = [];
@@ -51,10 +51,8 @@ export class Lexer {
             } else if (this.isAlpha(char)) {
                 this.nextAsSymbol();
             } else {
-                this.reportError(
+                this.runtime.errorHandler.report("syntax")(
                     `Unknown char ${char}`,
-                    "syntax",
-                    this.src,
                     new Token(
                         "String",
                         char,
@@ -106,10 +104,8 @@ export class Lexer {
         }
 
         if (this.isEOF() || this.peekChar() === "\n") {
-            this.reportError(
+            this.runtime.errorHandler.report("syntax")(
                 "Unterminated string literal",
-                "syntax",
-                this.src,
                 new Token(
                     "String",
                     this.src.substring(

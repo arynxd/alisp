@@ -3,7 +3,7 @@ import { stringify } from "../util";
 
 function print(ctx: FunctionExecutionContext) {
     ctx.reduceAll()
-        .map(v => stringify(v, ctx.reportError))
+        .map((v) => stringify(v, ctx.runtime))
         .forEach((v) => console.log(v));
 }
 
