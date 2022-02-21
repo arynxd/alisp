@@ -58,7 +58,9 @@ export class Lexer {
                         char,
                         char,
                         this.line,
-                        this.startCol
+                        this.startCol,
+                        this.runtime.currentFile,
+                        this.runtime.currentSrc
                     )
                 );
             }
@@ -117,7 +119,9 @@ export class Lexer {
                         this.pos
                     ),
                     this.line,
-                    this.startCol
+                    this.startCol,
+                    this.runtime.currentFile,
+                    this.runtime.currentSrc
                 )
             );
         }
@@ -144,7 +148,9 @@ export class Lexer {
                 identifier,
                 value,
                 this.line,
-                this.startCol
+                this.startCol,
+                this.runtime.currentFile,
+                this.runtime.currentSrc
             )
         );
     }

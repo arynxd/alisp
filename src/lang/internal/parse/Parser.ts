@@ -25,7 +25,7 @@ export class Parser {
         }
 
         return new ListExpr(
-            new Token("StartList", "(", undefined, 0, 0),
+            new Token("StartList", "(", undefined, 0, 0, this.runtime.currentFile , this.runtime.currentSrc),
             expressions
         );
     }

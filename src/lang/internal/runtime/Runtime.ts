@@ -5,9 +5,10 @@ import { SymbolTable } from "./symbol";
 export class Runtime {
     private readonly _globalSymbols: SymbolTable;
     private readonly _callStack: CallStack;
+
     private _errorHandler: ErrorHandler;
     private _strict = false;
-    private _maxStackSize = 100;
+    private _maxStackSize = 5;
     private _currentFile = "<anonymous>";
     private _currentSrc = "<nil>";
 
@@ -41,18 +42,12 @@ export class Runtime {
 
     set currentFile(value) {
         this._currentFile = value;
-        this._errorHandler = new ErrorHandler(
-            value,
-            this.currentSrc
-        );
+        this._errorHandler = new ErrorHandler(this);
     }
 
     set currentSrc(value) {
         this._currentSrc = value;
-        this._errorHandler = new ErrorHandler(
-            this.currentFile,
-            value
-        );
+        this._errorHandler = new ErrorHandler(this);
     }
 
     set strict(value) {
@@ -62,9 +57,6 @@ export class Runtime {
     constructor() {
         this._globalSymbols = new SymbolTable(this);
         this._callStack = new CallStack();
-        this._errorHandler = new ErrorHandler(
-            this._currentFile,
-            this._currentSrc
-        );
+        this._errorHandler = new ErrorHandler(this);
     }
 }

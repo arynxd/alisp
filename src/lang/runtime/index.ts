@@ -21,6 +21,7 @@ import { Token } from "../internal/parse/Token";
 export function execute(src: string) {
     const runtime = new Runtime();
     runtime.currentFile = "<anonymous>";
+    runtime.currentSrc = src;
 
     const interpreter = new Interpreter(runtime);
     loadStdLib(runtime).then((std) => {
@@ -49,8 +50,15 @@ class Interpreter {
 
         this.runtime.callStack.push(
             new StackEntry(
-                this.runtime.currentFile,
-                new Token("StartList", "main", undefined, 0, 0)
+                new Token(
+                    "StartList",
+                    "main",
+                    undefined,
+                    0,
+                    0,
+                    this.runtime.currentFile,
+                    this.runtime.currentSrc
+                )
             )
         );
 
@@ -86,7 +94,7 @@ class Interpreter {
             this.runtime.maxStackSize
         ) {
             runtime.errorHandler.report("runtime")(
-                "Stack overflow"
+                "stack overflow"
             );
         }
 
@@ -95,52 +103,46 @@ class Interpreter {
         const oldSymbols = this.symbols;
         const [head, ...exprs] = expr.list;
 
-        this.runtime.callStack.push(
-            new StackEntry(
-                this.runtime.currentFile,
-                head.wrappingToken
-            )
-        );
-
         try {
             if (head instanceof SymbolExpr) {
-                this.symbols = new SymbolTable(
-                    this.runtime,
-                    this.symbols
+                this.runtime.callStack.push(
+                    new StackEntry(head.wrappingToken)
                 );
 
                 const identifier =
                     head.wrappingToken.identifier;
-
-                if (!this.symbols.has(identifier)) {
-                    runtime.errorHandler.report("runtime")(
-                        `Symbol ${identifier} was not found`
-                    );
-                }
 
                 const maybeFn = this.evaluateSymbol(
                     head,
                     runtime
                 );
 
-                if (isLispFunction(maybeFn)) {
-                    const ctx = new FunctionExecutionContext(
-                        this,
-                        runtime,
-                        exprs,
-                        maybeFn
-                    );
+                this.symbols = new SymbolTable(
+                    this.runtime,
+                    this.symbols
+                );
 
-                    return maybeFn.execute(ctx);
+                if (!isLispFunction(maybeFn)) {
+                    return runtime.errorHandler.report(
+                        "runtime"
+                    )(
+                        `Symbol ${identifier} was not a function`
+                    );
                 }
 
-                runtime.errorHandler.report("runtime")(
-                    `Symbol ${identifier} was not a function`
+                const ctx = new FunctionExecutionContext(
+                    this,
+                    runtime,
+                    exprs,
+                    maybeFn
                 );
+
+                return maybeFn.execute(ctx);
             }
         } finally {
             this.symbols = oldSymbols;
             this.runtime.callStack.pop(); // only pop after recursion has finished
+            this.runtime.callStack.callAmount--;
         }
 
         return expr.list.map((ex) =>
@@ -153,13 +155,7 @@ class Interpreter {
     }
 
     private evaluateSymbol(expr: SymbolExpr, runtime: Runtime) {
-        const id = expr.wrappingToken.identifier;
-        if (!this.symbols.has(id)) {
-            runtime.errorHandler.report("runtime")(
-                `Symbol '${id}' does not exist`
-            );
-        }
-        return this.symbols.get(id);
+        return this.symbols.get(expr.wrappingToken.identifier);
     }
 }
 

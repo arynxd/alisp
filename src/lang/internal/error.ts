@@ -1,5 +1,6 @@
 import { exit } from "process";
 import type { Token } from "./parse/Token";
+import type { Runtime } from "./runtime/Runtime";
 
 export type ErrorType =
     | "syntax"
@@ -8,13 +9,13 @@ export type ErrorType =
     | "panic";
 
 type ReportErrorFunc<T extends ErrorType> = {
-    syntax: ReportSyntaxlErrorFunc;
+    syntax: ReportSyntaxErrorFunc;
     runtime: ReportGeneralErrorFunc;
     internal: ReportGeneralErrorFunc;
     panic: ReportGeneralErrorFunc;
 }[T];
 
-export type ReportSyntaxlErrorFunc = (
+export type ReportSyntaxErrorFunc = (
     message: string,
     token: Token
 ) => never;
@@ -22,20 +23,46 @@ export type ReportSyntaxlErrorFunc = (
 export type ReportGeneralErrorFunc = (message: string) => never;
 
 export class ErrorHandler {
-    constructor(
-        public readonly file: string,
-        public readonly src: string
-    ) {}
+    constructor(public readonly runtime: Runtime) {}
+
+    private getSurroundingContext(token: Token): string {
+        const snippets = token.containingSrc.split("\n");
+
+        let out = (snippets[token.line - 2] ?? "") + "\n";
+
+        let spaces =
+            token.startCol < 5 ? 0 : token.startCol - 2;
+        let arrowCount = token.identifier.length + 5;
+
+        const arrows =
+            " ".repeat(spaces) + "^".repeat(arrowCount);
+
+        out += (snippets[token.line - 1] ?? "") + "\n";
+        out += arrows + "\n";
+        out += (snippets[token.line] ?? "") + "\n";
+        return out;
+    }
 
     public report<T extends ErrorType>(
         type: T
     ): ReportErrorFunc<T> {
         if (type === "syntax") {
-            const fun: ReportSyntaxlErrorFunc = (
+            const fun: ReportSyntaxErrorFunc = (
                 message,
                 token
             ) => {
-                console.error("Syntax error");
+                console.error(
+                    `a syntax error has occurred : ${message}`
+                );
+
+                console.error(
+                    `  @ line ${token.line} of ${this.runtime.currentFile}`
+                );
+
+                const context =
+                    this.getSurroundingContext(token);
+
+                console.error(context);
 
                 exit(1);
             };
@@ -54,6 +81,29 @@ export class ErrorHandler {
                     );
                 }
 
+                let entry = this.runtime.callStack.pop();
+
+                if (!entry) {
+                    console.error(
+                        "stack was empty, this is a bug"
+                    );
+                    exit(1);
+                }
+
+                const context = this.getSurroundingContext(
+                    entry.token
+                );
+
+                console.error(context);
+
+                console.error("stack::");
+
+                while (entry) {
+                    console.error(
+                        `  => ${entry.token.identifier} line ${entry.token.line} of ${entry.token.filePath}`
+                    );
+                    entry = this.runtime.callStack.pop();
+                }
                 exit(1);
             };
             //NOTE: TS cant determine that 'type' is associated with this function
@@ -63,49 +113,3 @@ export class ErrorHandler {
         }
     }
 }
-
-/**
- * const reportError: ReportErrorFunc = (
-            message,
-            type,
-            maybeSrc,
-            maybeToken
-        ) => {
-            console.error();
-
-            if (type === "panic") {
-                console.error(`panic! : ${message}`);
-            } else {
-                console.error(
-                    `a ${type} error has occurred : ${message}`
-                );
-            }
-
-            let entry = this.callStack.pop();
-
-            if (!entry) {
-                console.error("stack was empty, this is a bug");
-                exit(1);
-            }
-
-            const snippet =
-                src.split("\n")[entry.token.line - 1];
-
-            const arrows =
-                " ".repeat(entry.token.startCol) +
-                "^".repeat(entry.token.identifier.length);
-
-            console.error(snippet);
-            console.error(arrows);
-
-            console.error("stack::");
-
-            while (entry) {
-                console.error(
-                    `  => ${entry.token.identifier} (${entry.token.line}) (${entry.filePath})`
-                );
-                entry = this.callStack.pop();
-            }
-            exit(1);
-        };
- */

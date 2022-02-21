@@ -25,8 +25,16 @@ function _import(ctx: FunctionExecutionContext) {
 
     ctx.setSymbols(ctx.symbols.inheritedSymbols!);
 
+    const oldPath = ctx.runtime.currentFile
+    const oldSrc = ctx.runtime.currentSrc
+
     ctx.runtime.currentFile = path;
+    ctx.runtime.currentSrc = code
+
     ctx.interpret(code);
+    
+    ctx.runtime.currentFile = oldPath
+    ctx.runtime.currentSrc = oldSrc
 
     return undefined;
 }

@@ -8,8 +8,7 @@ import {
 } from "../runtime/symbol";
 import {
     isListExpr,
-    isNonEmptyString,
-    isValidSymbol,
+    isNonEmptyString
 } from "../util";
 
 function fun(ctx: FunctionExecutionContext) {
@@ -19,15 +18,17 @@ function fun(ctx: FunctionExecutionContext) {
         ))
     */
 
-    const name = ctx.reduceOne(0);
+    const _name = ctx.arg(0)
 
-    if (!isNonEmptyString(name)) {
-        return ctx.error("runtime")(
+    if (!(_name instanceof SymbolExpr)) {
+        return ctx.error('runtime')(
             "'fun' name was not a valid symbol"
-        );
+        )
     }
-
-    if (!isValidSymbol(name)) {
+    
+    const name = _name.wrappingToken.identifier
+    
+    if (!isNonEmptyString(name)) {
         return ctx.error("runtime")(
             "'fun' name was not a valid symbol"
         );
@@ -45,7 +46,7 @@ function fun(ctx: FunctionExecutionContext) {
 
     if (!isListExpr(body)) {
         return ctx.error("runtime")(
-            "'fun' args body not a list"
+            "'fun' body not a list"
         );
     }
 

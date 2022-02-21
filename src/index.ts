@@ -1,11 +1,5 @@
 import { execute } from "./lang/runtime";
 
-const src = `
-    (strict)
-
-    (import "src/test")
-
-    (func)
-`;
+const src = `(import "src/main") (main)`;
 
 execute(src);

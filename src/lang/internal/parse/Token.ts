@@ -13,7 +13,9 @@ export class Token {
         public readonly identifier: string,
         public readonly value: unknown,
         public readonly line: number,
-        public readonly startCol: number
+        public readonly startCol: number,
+        public readonly filePath: string,
+        public readonly containingSrc: string
     ) {}
 
     get endCol() {

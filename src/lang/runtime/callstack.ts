@@ -15,7 +15,6 @@ export class CallStack {
 
 export class StackEntry {
     constructor(
-        public readonly filePath: string,
         public readonly token: Token
     ) {}
 }

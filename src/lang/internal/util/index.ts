@@ -50,5 +50,5 @@ export function isNonEmptyString(
 }
 
 export function isValidSymbol(c: string) {
-    return /[^\d\(\)"'\s]/.test(c);
+    return /[^\(\)"'\s]/.test(c);
 }
