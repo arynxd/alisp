@@ -1,7 +1,7 @@
 import type { FunctionExecutionContext } from "../../runtime";
 import type { SymbolExpr } from "../parse/Expr";
 import type { Interceptor } from "../runtime/interceptor";
-import { isNamed as isNamedSymbol, LispFunction, SymbolTable } from "../runtime/symbol";
+import { LispFunction, SymbolTable } from "../runtime/symbol";
 import { isListExpr, isNonEmptyString, isSymbolExpr } from "../util";
 
 const symbolWhiteList = ["fun", "export", "named"];
@@ -54,9 +54,12 @@ function _module(ctx: FunctionExecutionContext) {
     const lookupFailed: Interceptor<"symbol-lookup"> = {
         type: "symbol-lookup",
         intercept: (symbol: SymbolExpr) => {
-            return ctx.error("runtime")(
-                `${symbol.wrappingToken.identifier} is not allowed in a module context`
-            );
+            if (!symbolWhiteList.includes(symbol.wrappingToken.identifier)) {
+                return ctx.error("runtime")(
+                    `${symbol.wrappingToken.identifier} is not allowed in a module context`
+                );
+            }
+            return "no-op"
         },
     };
 

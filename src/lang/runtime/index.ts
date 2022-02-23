@@ -89,23 +89,9 @@ class Interpreter {
 
                 this.symbols = new SymbolTable(this.runtime, this.symbols);
 
-                //TODO: find a better impl for this
-                const lookupFailed = (): Symbol => {
-                    const fn = this.runtime.interceptorController.get("symbol-lookup");
-
-                    return fn.intercept(head);
-                };
-
                 if (maybeFn === undefined) {
                     // always report non existent symbols
-                    const ret = lookupFailed();
 
-                    if (ret) {
-                        // if we intercept to a fallback, return it
-                        return ret;
-                    }
-
-                    // otherwise, error
                     this.runtime.errorHandler.report("runtime")(
                         `symbol '${head.wrappingToken.identifier}' does not exist`
                     );
@@ -139,6 +125,16 @@ class Interpreter {
 
     private evaluateSymbol(expr: SymbolExpr, runtime: Runtime) {
         const name = expr.wrappingToken.identifier;
+
+        const fn = this.runtime.interceptorController.get("symbol-lookup");
+
+        if (fn) {
+            const ret = fn.intercept(expr)
+            
+            if (ret !== "no-op") {
+                return ret
+            }
+        }
 
         if (name.includes(runtime.moduleDenotion)) {
             // handle module lookup

@@ -5,5 +5,7 @@
         (print 1 (endl))
     ))
 
+    (print 2)
+
     (export main)
 ))

@@ -5,17 +5,12 @@ import type { Symbol } from "./symbol";
 export type InterceptorType = "symbol-lookup";
 
 type InterceptorEvent<T extends InterceptorType> = {
-    "symbol-lookup": (symbol: SymbolExpr) => Symbol;
+    "symbol-lookup": (symbol: SymbolExpr) => Symbol | "no-op";
 }[T];
 
 export type Interceptor<T extends InterceptorType> = {
     type: T;
     intercept: InterceptorEvent<T>;
-};
-
-const defaultInterceptor: Interceptor<any> = {
-    type: "",
-    intercept: (..._: never[]) => {},
 };
 
 export class InterceptorHandler {
@@ -25,8 +20,8 @@ export class InterceptorHandler {
         this._interceptors = new Map();
     }
 
-    public get<T extends InterceptorType>(type: T): Interceptor<T> {
-        return this._interceptors.get(type) ?? defaultInterceptor;
+    public get<T extends InterceptorType>(type: T): Interceptor<T> | undefined {
+        return this._interceptors.get(type);
     }
 
     public set<T extends InterceptorType>(type: T, interceptor: Interceptor<T>) {
