@@ -31,7 +31,7 @@ function _module(ctx: FunctionExecutionContext) {
     const moduleName = _moduleName.wrappingToken.identifier;
     const moduleBody = _moduleBody;
 
-    const wrappedSyms = new SymbolTable(ctx.runtime);
+    const wrappedSyms = new SymbolTable(ctx.runtime, ctx.symbols);
 
     const doExport: LispFunction = {
         name: "export",

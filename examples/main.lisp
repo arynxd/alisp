@@ -2,10 +2,8 @@
 
 (module main (
     (fun main () (
-        
+        (print 1 (endl))
     ))
-
-    (name)
 
     (export main)
 ))
