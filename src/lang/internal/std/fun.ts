@@ -66,6 +66,8 @@ function fun(ctx: FunctionExecutionContext) {
     ): Symbol => {
         args.list.forEach((param, index) => {
             const value = closureCtx.reduceOne(index);
+            console.log(param, index, (closureCtx as any).exprs, value);
+            
 
             if (ctx.runtime.strict && value === undefined) {
                 return closureCtx.error("runtime")(

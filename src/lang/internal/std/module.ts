@@ -1,8 +1,5 @@
 import type { FunctionExecutionContext } from "../../runtime";
-import {
-    LispFunction,
-    SymbolTable,
-} from "../runtime/symbol";
+import { isNamed as isNamedSymbol, LispFunction, SymbolTable } from "../runtime/symbol";
 import {
     isListExpr,
     isNonEmptyString,
@@ -41,10 +38,7 @@ function _module(ctx: FunctionExecutionContext) {
     const moduleName = _moduleName.wrappingToken.identifier;
     const moduleBody = _moduleBody;
 
-    const wrappedSyms = new SymbolTable(
-        ctx.runtime,
-        ctx.symbols
-    ); //FIXME: should ctx.symbols be passed here?
+    const wrappedSyms = new SymbolTable(ctx.runtime);
 
     const doExport: LispFunction = {
         name: "export",
@@ -64,17 +58,39 @@ function _module(ctx: FunctionExecutionContext) {
             }
 
             exports.forEach(mod.addExport.bind(mod));
+            return undefined
         },
     };
 
+    const lookupFailed: LispFunction = {
+        name: "lookup-failed",
+        execute: (_ctx: FunctionExecutionContext) => {
+            const sym = _ctx.arg(0)
+
+            if (!isSymbolExpr(sym)) {
+                return ctx.error('internal')(
+                    "'lookup-failed' symbol was not a symbol"
+                )
+            }
+
+            return ctx.error('runtime')(
+                `${sym.wrappingToken.identifier} is not allowed in a module context`
+            )
+        }
+    }
+
     wrappedSyms.set("export", doExport);
+    wrappedSyms.set("fun", ctx.runtime.globalSymbols.get("fun"))
+    wrappedSyms.set("named", ctx.runtime.globalSymbols.get("named"))
+    //TODO: find a better impl for this
+    wrappedSyms.set("lookup-failed", lookupFailed)
 
     const oldSyms = ctx.symbols;
     ctx.setSymbols(wrappedSyms);
     ctx.evaluate(moduleBody);
     ctx.setSymbols(oldSyms);
 
-    return undefined
+    return undefined;
 }
 
 export const mod = {

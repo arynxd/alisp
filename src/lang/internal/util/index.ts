@@ -5,19 +5,20 @@ import {
     SymbolExpr,
 } from "../parse/Expr";
 import type { Runtime } from "../runtime/runtime";
+import { isLispFunction, isNamed, Symbol } from "../runtime/symbol";
 
 export function stringify(
-    v: unknown,
+    v: Symbol,
     runtime: Runtime
 ): string {
-    if (typeof v === "function")
+    if (isLispFunction(v))
         return `fn ${v.name || "(anonymous)"}`;
 
-    if (typeof v === "string") return v.toString();
+    if (typeof v === "string") return v;
 
     if (typeof v === "number") return v.toString();
 
-    if (typeof v === "boolean") return v.toString();
+    if (typeof v === "boolean") return v ? "true" : "false";
 
     if (Array.isArray(v))
         return `(${v
@@ -26,8 +27,11 @@ export function stringify(
 
     if (v === null || v === undefined) return "nptr";
 
+    if (isNamed(v)) {
+        return v.symbol?.toString() ?? "nptr"
+    }
     return runtime.errorHandler.report("internal")(
-        `Attempted to stringify unhandled type of value ${v}`
+        `attempted to stringify unhandled type of value ${typeof v}`
     );
 }
 

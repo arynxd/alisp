@@ -1,4 +1,3 @@
-
 import type { FunctionExecutionContext } from "../../runtime";
 import { Module } from "./module";
 import type { Runtime } from "./runtime";
@@ -46,10 +45,8 @@ export function isLispFunction(
     );
 }
 
-export function isModule(
-    mod: Symbol | Module
-): mod is Module {
-    return mod instanceof Module
+export function isModule(mod: Symbol | Module): mod is Module {
+    return mod instanceof Module;
 }
 
 export type LispFunction = {
@@ -57,12 +54,28 @@ export type LispFunction = {
     execute: (ctx: FunctionExecutionContext) => Symbol;
 };
 
+export type NamedSymbol = {
+    name: string;
+    symbol: Symbol;
+};
+
+export function isNamed(
+    sym: Symbol | NamedSymbol
+): sym is NamedSymbol {
+    return (
+        typeof sym === "object" &&
+        sym !== null &&
+        "name" in sym &&
+        typeof sym.name === "string"
+    );
+}
+
 export type Symbol =
     | number
     | string
     | boolean
     | null
-    | void
+    | undefined
     | LispFunction
     | Module
     | Symbol[];

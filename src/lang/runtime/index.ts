@@ -84,7 +84,7 @@ class Interpreter {
             return this.evaluateSymbol(expr, runtime);
         }
 
-        runtime.errorHandler.report("internal")(
+        return runtime.errorHandler.report("internal")(
             `unkown Expr ${expr}`
         );
     }
@@ -120,8 +120,60 @@ class Interpreter {
                     this.symbols
                 );
 
-                if (!isLispFunction(maybeFn)) {                    
-                    return maybeFn // return the value if we dont see a function
+                //TODO: find a better impl for this
+                const lookupFailed = (): Symbol | "skip" => {
+                    const fn = this.symbols.get("lookup-failed")
+                    
+                    if (!lookupFailed) {
+                        return "skip"
+                    }
+
+                    if (!isLispFunction(fn)) {
+                        return this.runtime.errorHandler.report('runtime')(
+                            `lookup-failed was not a function got ${lookupFailed} instead`
+                        )
+                    }
+                    
+                    const expr = new SymbolExpr(
+                        new Token(
+                            "Symbol",
+                            "symbol",
+                            head.wrappingToken.value,
+                            head.wrappingToken.line,
+                            head.wrappingToken.startCol,
+                            head.wrappingToken.filePath,
+                            head.wrappingToken.containingSrc,
+                        )
+                    )
+
+
+                    return fn.execute(new FunctionExecutionContext(
+                        this,
+                        this.runtime,
+                        [expr],
+                        fn,
+                    ))
+                }
+
+                if (maybeFn === undefined) { // always report non existent symbols
+                    const ret = lookupFailed()
+                    if (ret !== 'skip') {
+                        return ret
+                    }
+
+                    this.runtime.errorHandler.report('runtime')(
+                        `symbol '${head.wrappingToken.identifier}' does not exist`
+                    )
+                }
+
+
+                if (!isLispFunction(maybeFn)) {          
+                    if (this.runtime.strict && exprs.length > 0) {
+                        this.runtime.errorHandler.report('runtime')(
+                            `symbol '${head.wrappingToken.identifier}' was not a function`
+                        )
+                    }       
+                    return maybeFn // return the value if we dont see a function, but a value exists
                 }
 
                 const ctx = new FunctionExecutionContext(

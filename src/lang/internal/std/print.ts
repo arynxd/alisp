@@ -2,11 +2,9 @@ import type { FunctionExecutionContext } from "../../runtime";
 import { stringify } from "../util";
 
 function print(ctx: FunctionExecutionContext) {
-
-    
     ctx.reduceAll()
         .map((v) => stringify(v, ctx.runtime))
-        .forEach((v) => console.log(v));
+        .forEach((v) => process.stdout.write(v));
 }
 
 export const mod = {

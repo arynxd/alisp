@@ -1,5 +1,5 @@
 import type { Runtime } from "./runtime";
-import { isLispFunction, Symbol } from "./symbol";
+import { isNamed, Symbol } from "./symbol";
 
 export class Module {
     private readonly exports: Map<string, Symbol>
@@ -9,7 +9,7 @@ export class Module {
     }
 
     public addExport(sym: Symbol) {
-        if (isLispFunction(sym)) {
+        if (isNamed(sym)) {
             this.exports.set(sym.name, sym)
             return
         }
