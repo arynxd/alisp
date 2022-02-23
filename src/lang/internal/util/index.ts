@@ -1,18 +1,9 @@
-import {
-    Expr,
-    ListExpr,
-    LiteralExpr,
-    SymbolExpr,
-} from "../parse/Expr";
+import { Expr, ListExpr, LiteralExpr, SymbolExpr } from "../parse/Expr";
 import type { Runtime } from "../runtime/runtime";
 import { isLispFunction, isNamed, Symbol } from "../runtime/symbol";
 
-export function stringify(
-    v: Symbol,
-    runtime: Runtime
-): string {
-    if (isLispFunction(v))
-        return `fn ${v.name || "(anonymous)"}`;
+export function stringify(v: Symbol, runtime: Runtime): string {
+    if (isLispFunction(v)) return `fn ${v.name || "(anonymous)"}`;
 
     if (typeof v === "string") return v;
 
@@ -20,15 +11,12 @@ export function stringify(
 
     if (typeof v === "boolean") return v ? "true" : "false";
 
-    if (Array.isArray(v))
-        return `(${v
-            .map((a) => stringify(a, runtime))
-            .join(" ")})`;
+    if (Array.isArray(v)) return `(${v.map((a) => stringify(a, runtime)).join(" ")})`;
 
     if (v === null || v === undefined) return "nptr";
 
     if (isNamed(v)) {
-        return v.symbol?.toString() ?? "nptr"
+        return v.symbol?.toString() ?? "nptr";
     }
     return runtime.errorHandler.report("internal")(
         `attempted to stringify unhandled type of value ${typeof v}`
@@ -47,9 +35,7 @@ export function isLiteralExpr(expr: Expr): expr is LiteralExpr {
     return expr instanceof LiteralExpr;
 }
 
-export function isNonEmptyString(
-    value: unknown
-): value is string {
+export function isNonEmptyString(value: unknown): value is string {
     return typeof value === "string" && !!value;
 }
 

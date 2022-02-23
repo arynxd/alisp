@@ -1,16 +1,8 @@
 import type { FunctionExecutionContext } from "../../runtime";
 
 import { SymbolExpr } from "../parse/Expr";
-import {
-    LispFunction,
-    Symbol,
-    SymbolTable,
-} from "../runtime/symbol";
-import {
-    isListExpr,
-    isNonEmptyString,
-    isSymbolExpr
-} from "../util";
+import { LispFunction, Symbol, SymbolTable } from "../runtime/symbol";
+import { isListExpr, isNonEmptyString, isSymbolExpr } from "../util";
 
 function fun(ctx: FunctionExecutionContext) {
     /*
@@ -19,36 +11,28 @@ function fun(ctx: FunctionExecutionContext) {
         ))
     */
 
-    const _name = ctx.arg(0)
+    const _name = ctx.arg(0);
 
     if (!isSymbolExpr(_name)) {
-        return ctx.error('runtime')(
-            "'fun' name was not a valid symbol"
-        )
+        return ctx.error("runtime")("'fun' name was not a valid symbol");
     }
-    
-    const name = _name.wrappingToken.identifier
-    
+
+    const name = _name.wrappingToken.identifier;
+
     if (!isNonEmptyString(name) || name.includes(ctx.runtime.moduleDenotion)) {
-        return ctx.error("runtime")(
-            "'fun' name was not a valid symbol"
-        );
+        return ctx.error("runtime")("'fun' name was not a valid symbol");
     }
 
     const args = ctx.arg(1);
 
     if (!isListExpr(args)) {
-        return ctx.error("runtime")(
-            "'fun' args was not a list"
-        );
+        return ctx.error("runtime")("'fun' args was not a list");
     }
 
     const body = ctx.arg(2);
 
     if (!isListExpr(body)) {
-        return ctx.error("runtime")(
-            "'fun' body not a list"
-        );
+        return ctx.error("runtime")("'fun' body not a list");
     }
 
     for (const arg of args.list) {
@@ -61,13 +45,10 @@ function fun(ctx: FunctionExecutionContext) {
 
     const closure = new SymbolTable(ctx.runtime, ctx.symbols);
 
-    const fn = (
-        closureCtx: FunctionExecutionContext
-    ): Symbol => {
+    const fn = (closureCtx: FunctionExecutionContext): Symbol => {
         args.list.forEach((param, index) => {
             const value = closureCtx.reduceOne(index);
             console.log(param, index, (closureCtx as any).exprs, value);
-            
 
             if (ctx.runtime.strict && value === undefined) {
                 return closureCtx.error("runtime")(

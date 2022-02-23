@@ -2,11 +2,7 @@ import { exit } from "process";
 import type { Token } from "./parse/Token";
 import type { Runtime } from "./runtime/runtime";
 
-export type ErrorType =
-    | "syntax"
-    | "runtime"
-    | "internal"
-    | "panic";
+export type ErrorType = "syntax" | "runtime" | "internal" | "panic";
 
 type ReportErrorFunc<T extends ErrorType> = {
     syntax: ReportSyntaxErrorFunc;
@@ -15,10 +11,7 @@ type ReportErrorFunc<T extends ErrorType> = {
     panic: ReportGeneralErrorFunc;
 }[T];
 
-export type ReportSyntaxErrorFunc = (
-    message: string,
-    token: Token
-) => never;
+export type ReportSyntaxErrorFunc = (message: string, token: Token) => never;
 
 export type ReportGeneralErrorFunc = (message: string) => never;
 
@@ -30,12 +23,10 @@ export class ErrorHandler {
 
         let out = (snippets[token.line - 2] ?? "") + "\n";
 
-        let spaces =
-            token.startCol < 5 ? 0 : token.startCol - 2;
+        let spaces = token.startCol < 5 ? 0 : token.startCol - 2;
         let arrowCount = token.identifier.length + 5;
 
-        const arrows =
-            " ".repeat(spaces) + "^".repeat(arrowCount);
+        const arrows = " ".repeat(spaces) + "^".repeat(arrowCount);
 
         out += (snippets[token.line - 1] ?? "") + "\n";
         out += arrows + "\n";
@@ -43,24 +34,14 @@ export class ErrorHandler {
         return out;
     }
 
-    public report<T extends ErrorType>(
-        type: T
-    ): ReportErrorFunc<T> {
+    public report<T extends ErrorType>(type: T): ReportErrorFunc<T> {
         if (type === "syntax") {
-            const fun: ReportSyntaxErrorFunc = (
-                message,
-                token
-            ) => {
-                console.error(
-                    `a syntax error has occurred : ${message}`
-                );
+            const fun: ReportSyntaxErrorFunc = (message, token) => {
+                console.error(`a syntax error has occurred : ${message}`);
 
-                console.error(
-                    `  @ line ${token.line} of ${this.runtime.currentFile}`
-                );
+                console.error(`  @ line ${token.line} of ${this.runtime.currentFile}`);
 
-                const context =
-                    this.getSurroundingContext(token);
+                const context = this.getSurroundingContext(token);
 
                 console.error(context);
 
@@ -76,23 +57,17 @@ export class ErrorHandler {
                 if (type === "panic") {
                     console.error(`panic! : ${message}`);
                 } else {
-                    console.error(
-                        `a ${type} error has occurred : ${message}`
-                    );
+                    console.error(`a ${type} error has occurred : ${message}`);
                 }
 
                 let entry = this.runtime.callStack.pop();
 
                 if (!entry) {
-                    console.error(
-                        "stack was empty, this is a bug"
-                    );
+                    console.error("stack was empty, this is a bug");
                     exit(1);
                 }
 
-                const context = this.getSurroundingContext(
-                    entry.token
-                );
+                const context = this.getSurroundingContext(entry.token);
 
                 console.error(context);
 

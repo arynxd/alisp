@@ -3,10 +3,7 @@ import { isValidSymbol } from "../util";
 import { Token, TokenType } from "./Token";
 
 export class Lexer {
-    constructor(
-        public readonly src: string,
-        private readonly runtime: Runtime
-    ) {}
+    constructor(public readonly src: string, private readonly runtime: Runtime) {}
 
     private readonly tokens: Token[] = [];
     private pos = 0;
@@ -70,14 +67,10 @@ export class Lexer {
     private nextAsSymbol() {
         while (isValidSymbol(this.peekChar())) this.nextChar();
 
-        const symbol = this.src.substring(
-            this.tokenStart,
-            this.pos
-        );
+        const symbol = this.src.substring(this.tokenStart, this.pos);
 
         // presume its a symbol if its not reserved
-        const type =
-            this.keyWordOrUndefined(symbol) ?? "Symbol";
+        const type = this.keyWordOrUndefined(symbol) ?? "Symbol";
 
         this.pushToken(type, symbol);
     }
@@ -85,10 +78,7 @@ export class Lexer {
     private nextAsInt() {
         while (this.isDigit(this.peekChar())) this.nextChar();
 
-        const num = this.src.substring(
-            this.tokenStart,
-            this.pos
-        );
+        const num = this.src.substring(this.tokenStart, this.pos);
 
         this.pushToken("Integer", Number(num));
     }
@@ -97,11 +87,7 @@ export class Lexer {
         this.nextChar(); // skip "
         this.tokenStart++;
 
-        while (
-            this.peekChar() !== '"' &&
-            !this.isEOF() &&
-            this.peekChar() !== "\n"
-        ) {
+        while (this.peekChar() !== '"' && !this.isEOF() && this.peekChar() !== "\n") {
             this.nextChar();
         }
 
@@ -110,14 +96,8 @@ export class Lexer {
                 "Unterminated string literal",
                 new Token(
                     "String",
-                    this.src.substring(
-                        this.tokenStart,
-                        this.pos
-                    ),
-                    this.src.substring(
-                        this.tokenStart,
-                        this.pos
-                    ),
+                    this.src.substring(this.tokenStart, this.pos),
+                    this.src.substring(this.tokenStart, this.pos),
                     this.line,
                     this.startCol,
                     this.runtime.currentFile,
@@ -126,10 +106,7 @@ export class Lexer {
             );
         }
 
-        const str = this.src.substring(
-            this.tokenStart,
-            this.pos
-        );
+        const str = this.src.substring(this.tokenStart, this.pos);
 
         this.pushToken("String", str);
 
@@ -137,10 +114,7 @@ export class Lexer {
     }
 
     private pushToken(type: TokenType, value?: unknown) {
-        const identifier = this.src.substring(
-            this.tokenStart,
-            this.pos
-        );
+        const identifier = this.src.substring(this.tokenStart, this.pos);
 
         this.tokens.push(
             new Token(
@@ -163,14 +137,10 @@ export class Lexer {
         return this.src[this.pos];
     }
 
-    private keyWordOrUndefined(
-        maybeKeyword: string
-    ): TokenType | undefined {
+    private keyWordOrUndefined(maybeKeyword: string): TokenType | undefined {
         const lookup = new Map([["nptr", "NullPtr"]]);
 
-        return lookup.get(maybeKeyword) as
-            | TokenType
-            | undefined;
+        return lookup.get(maybeKeyword) as TokenType | undefined;
     }
 
     private isEOF() {

@@ -11,19 +11,13 @@ export class SymbolExpr extends Expr {
 }
 
 export class ListExpr extends Expr {
-    public constructor(
-        public readonly wrappingToken: Token,
-        public readonly list: Expr[]
-    ) {
+    public constructor(public readonly wrappingToken: Token, public readonly list: Expr[]) {
         super();
     }
 }
 
 export class LiteralExpr extends Expr {
-    public constructor(
-        public readonly wrappingToken: Token,
-        public readonly literal: unknown
-    ) {
+    public constructor(public readonly wrappingToken: Token, public readonly literal: unknown) {
         super();
     }
 }

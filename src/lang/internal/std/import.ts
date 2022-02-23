@@ -6,13 +6,11 @@ function _import(ctx: FunctionExecutionContext) {
     const path = ctx.reduceOne(0);
 
     if (!isNonEmptyString(path)) {
-        return ctx.error("runtime")(
-            "'import' path was not a string"
-        );
+        return ctx.error("runtime")("'import' path was not a string");
     }
 
     if (ctx.runtime.moduleController.has(path)) {
-        return 
+        return;
     }
 
     let code: string;
@@ -22,23 +20,21 @@ function _import(ctx: FunctionExecutionContext) {
             encoding: "ascii",
         });
     } catch (ex) {
-        return ctx.error("runtime")(
-            "Could not import " + path + " because " + ex
-        );
+        return ctx.error("runtime")("Could not import " + path + " because " + ex);
     }
 
     ctx.setSymbols(ctx.symbols.inheritedSymbols!);
 
-    const oldPath = ctx.runtime.currentFile
-    const oldSrc = ctx.runtime.currentSrc
+    const oldPath = ctx.runtime.currentFile;
+    const oldSrc = ctx.runtime.currentSrc;
 
     ctx.runtime.currentFile = path;
-    ctx.runtime.currentSrc = code
+    ctx.runtime.currentSrc = code;
 
     ctx.interpret(code);
-    
-    ctx.runtime.currentFile = oldPath
-    ctx.runtime.currentSrc = oldSrc
+
+    ctx.runtime.currentFile = oldPath;
+    ctx.runtime.currentSrc = oldSrc;
 
     return undefined;
 }

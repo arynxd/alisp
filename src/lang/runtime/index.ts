@@ -1,18 +1,8 @@
 import { Runtime } from "../internal/runtime/runtime";
 import { Parser } from "../internal/parse/Parser";
-import {
-    isLispFunction,
-    LispFunction,
-    Symbol,
-    SymbolTable,
-} from "../internal/runtime/symbol";
+import { isLispFunction, LispFunction, Symbol, SymbolTable } from "../internal/runtime/symbol";
 import { Lexer } from "../internal/parse/Lexer";
-import {
-    Expr,
-    ListExpr,
-    LiteralExpr,
-    SymbolExpr,
-} from "../internal/parse/Expr";
+import { Expr, ListExpr, LiteralExpr, SymbolExpr } from "../internal/parse/Expr";
 import { stringify } from "../internal/util";
 import { loadStdLib } from "../internal/runtime/std";
 import { StackEntry } from "./callstack";
@@ -37,10 +27,7 @@ export function execute(src: string) {
 class Interpreter {
     constructor(private readonly runtime: Runtime) {}
 
-    public symbols = new SymbolTable(
-        this.runtime,
-        this.runtime.globalSymbols
-    );
+    public symbols = new SymbolTable(this.runtime, this.runtime.globalSymbols);
 
     public interpret(src: string) {
         const lexer = new Lexer(src, this.runtime);
@@ -63,10 +50,7 @@ class Interpreter {
             )
         );
 
-        const result = stringify(
-            this.evaluate(ast, this.runtime),
-            this.runtime
-        );
+        const result = stringify(this.evaluate(ast, this.runtime), this.runtime);
 
         console.log(`Result: ${result}`);
     }
@@ -84,19 +68,12 @@ class Interpreter {
             return this.evaluateSymbol(expr, runtime);
         }
 
-        return runtime.errorHandler.report("internal")(
-            `unkown Expr ${expr}`
-        );
+        return runtime.errorHandler.report("internal")(`unkown Expr ${expr}`);
     }
 
     private evaluateList(expr: ListExpr, runtime: Runtime) {
-        if (
-            this.runtime.callStack.callAmount >=
-            this.runtime.maxStackSize
-        ) {
-            runtime.errorHandler.report("runtime")(
-                "stack overflow"
-            );
+        if (this.runtime.callStack.callAmount >= this.runtime.maxStackSize) {
+            runtime.errorHandler.report("runtime")("stack overflow");
         }
 
         this.runtime.callStack.callAmount++;
@@ -106,82 +83,44 @@ class Interpreter {
 
         try {
             if (head instanceof SymbolExpr) {
-                this.runtime.callStack.push(
-                    new StackEntry(head.wrappingToken)
-                );
+                this.runtime.callStack.push(new StackEntry(head.wrappingToken));
 
-                const maybeFn = this.evaluateSymbol(
-                    head,
-                    runtime
-                );
+                const maybeFn = this.evaluateSymbol(head, runtime);
 
-                this.symbols = new SymbolTable(
-                    this.runtime,
-                    this.symbols
-                );
+                this.symbols = new SymbolTable(this.runtime, this.symbols);
 
                 //TODO: find a better impl for this
-                const lookupFailed = (): Symbol | "skip" => {
-                    const fn = this.symbols.get("lookup-failed")
-                    
-                    if (!lookupFailed) {
-                        return "skip"
+                const lookupFailed = (): Symbol => {
+                    const fn = this.runtime.interceptorController.get("symbol-lookup");
+
+                    return fn.intercept(head);
+                };
+
+                if (maybeFn === undefined) {
+                    // always report non existent symbols
+                    const ret = lookupFailed();
+
+                    if (ret) {
+                        // if we intercept to a fallback, return it
+                        return ret;
                     }
 
-                    if (!isLispFunction(fn)) {
-                        return this.runtime.errorHandler.report('runtime')(
-                            `lookup-failed was not a function got ${lookupFailed} instead`
-                        )
-                    }
-                    
-                    const expr = new SymbolExpr(
-                        new Token(
-                            "Symbol",
-                            "symbol",
-                            head.wrappingToken.value,
-                            head.wrappingToken.line,
-                            head.wrappingToken.startCol,
-                            head.wrappingToken.filePath,
-                            head.wrappingToken.containingSrc,
-                        )
-                    )
-
-
-                    return fn.execute(new FunctionExecutionContext(
-                        this,
-                        this.runtime,
-                        [expr],
-                        fn,
-                    ))
-                }
-
-                if (maybeFn === undefined) { // always report non existent symbols
-                    const ret = lookupFailed()
-                    if (ret !== 'skip') {
-                        return ret
-                    }
-
-                    this.runtime.errorHandler.report('runtime')(
+                    // otherwise, error
+                    this.runtime.errorHandler.report("runtime")(
                         `symbol '${head.wrappingToken.identifier}' does not exist`
-                    )
+                    );
                 }
 
-
-                if (!isLispFunction(maybeFn)) {          
+                if (!isLispFunction(maybeFn)) {
                     if (this.runtime.strict && exprs.length > 0) {
-                        this.runtime.errorHandler.report('runtime')(
+                        this.runtime.errorHandler.report("runtime")(
                             `symbol '${head.wrappingToken.identifier}' was not a function`
-                        )
-                    }       
-                    return maybeFn // return the value if we dont see a function, but a value exists
+                        );
+                    }
+                    return maybeFn; // return the value if we dont see a function, but a value exists
                 }
 
-                const ctx = new FunctionExecutionContext(
-                    this,
-                    runtime,
-                    exprs,
-                    maybeFn
-                );
+                const ctx = new FunctionExecutionContext(this, runtime, exprs, maybeFn);
 
                 return maybeFn.execute(ctx);
             }
@@ -191,9 +130,7 @@ class Interpreter {
             this.runtime.callStack.callAmount--;
         }
 
-        return expr.list.map((ex) =>
-            this.evaluate(ex, runtime)
-        );
+        return expr.list.map((ex) => this.evaluate(ex, runtime));
     }
 
     private evaluateLiteral(expr: LiteralExpr) {
@@ -201,30 +138,29 @@ class Interpreter {
     }
 
     private evaluateSymbol(expr: SymbolExpr, runtime: Runtime) {
-        const name = expr.wrappingToken.identifier
+        const name = expr.wrappingToken.identifier;
 
         if (name.includes(runtime.moduleDenotion)) {
             // handle module lookup
-            const parts = name.split(runtime.moduleDenotion)
+            const parts = name.split(runtime.moduleDenotion);
 
             if (parts.length < 2) {
-                return runtime.errorHandler.report('runtime')(
+                return runtime.errorHandler.report("runtime")(
                     `symbol ${name} was invalid for module lookup`
-                )
+                );
             }
 
-            const module = runtime.moduleController.get(parts[0])
-            const val = module.get(parts[1])
-            
+            const module = runtime.moduleController.get(parts[0]);
+            const val = module.get(parts[1]);
+
             if (!val) {
-                return runtime.errorHandler.report('runtime')(
+                return runtime.errorHandler.report("runtime")(
                     `symbol ${parts[1]} is not exported by ${parts[0]}`
-                )
+                );
             }
 
-            return val
+            return val;
         }
-
 
         return this.symbols.get(expr.wrappingToken.identifier);
     }
@@ -243,16 +179,11 @@ export class FunctionExecutionContext {
     }
 
     public reduceOne(index: number) {
-        return this.interpreter.evaluate(
-            this.exprs[index],
-            this.runtime
-        );
+        return this.interpreter.evaluate(this.exprs[index], this.runtime);
     }
 
     public reduceAll() {
-        return this.exprs.map((ex) =>
-            this.interpreter.evaluate(ex, this.runtime)
-        );
+        return this.exprs.map((ex) => this.interpreter.evaluate(ex, this.runtime));
     }
 
     public has(index: number) {
@@ -275,8 +206,5 @@ export class FunctionExecutionContext {
         this.interpreter.symbols = newSymbols;
     }
 
-    public readonly error =
-        this.runtime.errorHandler.report.bind(
-            this.runtime.errorHandler
-        );
+    public readonly error = this.runtime.errorHandler.report.bind(this.runtime.errorHandler);
 }

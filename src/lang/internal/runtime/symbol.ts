@@ -5,26 +5,16 @@ import type { Runtime } from "./runtime";
 export class SymbolTable {
     private readonly symbols: Map<string, Symbol>;
 
-    constructor(
-        private readonly runtime: Runtime,
-        public readonly inheritedSymbols?: SymbolTable
-    ) {
+    constructor(private readonly runtime: Runtime, public readonly inheritedSymbols?: SymbolTable) {
         this.symbols = new Map();
     }
 
     public has(key: string): boolean {
-        return (
-            (this.symbols.has(key) ||
-                this.inheritedSymbols?.has(key)) ??
-            false
-        );
+        return (this.symbols.has(key) || this.inheritedSymbols?.has(key)) ?? false;
     }
 
     public get(key: string): Symbol {
-        return (
-            this.symbols.get(key) ||
-            this.inheritedSymbols?.get(key)
-        );
+        return this.symbols.get(key) || this.inheritedSymbols?.get(key);
     }
 
     public set(key: string, value: Symbol) {
@@ -32,9 +22,7 @@ export class SymbolTable {
     }
 }
 
-export function isLispFunction(
-    fn: Symbol | LispFunction
-): fn is LispFunction {
+export function isLispFunction(fn: Symbol | LispFunction): fn is LispFunction {
     return (
         typeof fn === "object" &&
         fn !== null &&
@@ -59,15 +47,8 @@ export type NamedSymbol = {
     symbol: Symbol;
 };
 
-export function isNamed(
-    sym: Symbol | NamedSymbol
-): sym is NamedSymbol {
-    return (
-        typeof sym === "object" &&
-        sym !== null &&
-        "name" in sym &&
-        typeof sym.name === "string"
-    );
+export function isNamed(sym: Symbol | NamedSymbol): sym is NamedSymbol {
+    return typeof sym === "object" && sym !== null && "name" in sym && typeof sym.name === "string";
 }
 
 export type Symbol =

@@ -14,7 +14,5 @@ export class CallStack {
 }
 
 export class StackEntry {
-    constructor(
-        public readonly token: Token
-    ) {}
+    constructor(public readonly token: Token) {}
 }

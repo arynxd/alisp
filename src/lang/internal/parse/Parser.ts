@@ -1,17 +1,9 @@
 import type { Runtime } from "../runtime/runtime";
-import {
-    Expr,
-    ListExpr,
-    LiteralExpr,
-    SymbolExpr,
-} from "./Expr";
+import { Expr, ListExpr, LiteralExpr, SymbolExpr } from "./Expr";
 import { Token, TokenType } from "./Token";
 
 export class Parser {
-    constructor(
-        private readonly tokens: Token[],
-        private readonly runtime: Runtime
-    ) {}
+    constructor(private readonly tokens: Token[], private readonly runtime: Runtime) {}
 
     private current = 0;
 
@@ -25,7 +17,15 @@ export class Parser {
         }
 
         return new ListExpr(
-            new Token("StartList", "(", undefined, 0, 0, this.runtime.currentFile , this.runtime.currentSrc),
+            new Token(
+                "StartList",
+                "(",
+                undefined,
+                0,
+                0,
+                this.runtime.currentFile,
+                this.runtime.currentSrc
+            ),
             expressions
         );
     }
@@ -43,13 +43,8 @@ export class Parser {
     }
 
     private nextAsArgument() {
-        if (
-            this.advanceWhenHasAny("Integer", "String", "NullPtr")
-        ) {
-            return new LiteralExpr(
-                this.previous(),
-                this.previous().value
-            );
+        if (this.advanceWhenHasAny("Integer", "String", "NullPtr")) {
+            return new LiteralExpr(this.previous(), this.previous().value);
         }
 
         if (this.advanceWhenHasAny("Symbol")) {
@@ -67,9 +62,7 @@ export class Parser {
     }
 
     private advanceWhenHasAny(...types: TokenType[]) {
-        return types.some((t) => this.hasNext(t))
-            ? (this.advance(), true)
-            : false;
+        return types.some((t) => this.hasNext(t)) ? (this.advance(), true) : false;
     }
 
     private hasNext(type: TokenType) {
@@ -121,10 +114,7 @@ export class Parser {
         });
 
         if (stack.length) {
-            this.runtime.errorHandler.report("syntax")(
-                "Unmatched parantheses",
-                this.peek()
-            );
+            this.runtime.errorHandler.report("syntax")("Unmatched parantheses", this.peek());
         }
     }
 }
