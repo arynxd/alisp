@@ -1,9 +1,7 @@
 import { expect } from 'chai'
 import { describe, it } from 'mocha'
 
-describe("sanity checks", () => {
-    return
-    
+describe.skip("sanity checks", () => {
     it("should pass", () => {
         expect(undefined, "undefined").to.be.undefined
     })

@@ -5,6 +5,7 @@ export type TokenType =
     | "String"
     | "Integer"
     | "NullPtr"
+    | "Boolean"
     | "Eof";
 
 export class Token {

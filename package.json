@@ -6,7 +6,7 @@
     "scripts": {
         "start": "node dist",
         "watch": "tsc -w",
-        "test": "ts-mocha test/**/* -w --watch-extensions ts",
+        "test": "ts-mocha test/**/*",
         "fmt": "prettier --write . && tsc --pretty"
     },
     "keywords": [],

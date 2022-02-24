@@ -6,35 +6,86 @@ export class Lexer {
     constructor(public readonly src: string, private readonly runtime: Runtime) {}
 
     private readonly tokens: Token[] = [];
-    private pos = 0;
-    private tokenStart = 0;
-    private startCol = 0;
-    private line = 1;
+
+    private absolutePosition = 0;
+    private currentTokenStartPosition = 0;
+    private currentLine = 1;
 
     public lex() {
         while (!this.isEOF()) {
-            this.tokenStart = this.pos;
+            this.currentTokenStartPosition = this.absolutePosition;
 
             this.nextToken();
         }
 
         this.pushToken("Eof");
 
+        this.ensureMatchingParens();
         return this.tokens;
     }
 
     private nextToken() {
         const lookup = new Map([
-            ["(", () => this.pushToken("StartList")],
-            [")", () => this.pushToken("EndList")],
-            ['"', () => this.nextAsString()],
-            [" ", () => this.startCol++],
-            ["+", () => this.pushToken("Symbol", "+")],
-            ["\n", () => (this.line++, (this.startCol = 1))],
-            ["\t", () => this.startCol++],
-            ["\v", () => this.startCol++],
-            ["\r", () => this.startCol++],
-            ["\f", () => this.startCol++],
+            [
+                "(",
+                () => {
+                    this.pushToken("StartList");
+                },
+            ],
+            [
+                ")",
+                () => {
+                    this.pushToken("EndList");
+                },
+            ],
+            [
+                '"',
+                () => {
+                    this.nextAsString();
+                },
+            ],
+            [
+                " ",
+                () => {
+                    // no-op, the lexer will advance by itself
+                },
+            ],
+            [
+                "+",
+                () => {
+                    this.pushToken("Symbol", "+");
+                },
+            ],
+            [
+                "\n",
+                () => {
+                    this.currentLine++;
+                },
+            ],
+            [
+                "\t",
+                () => {
+                    // no-op, the lexer will advance by itself
+                },
+            ],
+            [
+                "\v",
+                () => {
+                    // no-op, the lexer will advance by itself
+                },
+            ],
+            [
+                "\r",
+                () => {
+                    // no-op, the lexer will advance by itself
+                },
+            ],
+            [
+                "\f",
+                () => {
+                    // no-op, the lexer will advance by itself
+                },
+            ],
         ]);
 
         const char = this.nextChar();
@@ -45,7 +96,7 @@ export class Lexer {
         } else {
             if (this.isDigit(char)) {
                 this.nextAsInt();
-            } else if (this.isAlpha(char)) {
+            } else if (isValidSymbol(char)) {
                 this.nextAsSymbol();
             } else {
                 this.runtime.errorHandler.report("syntax")(
@@ -54,8 +105,8 @@ export class Lexer {
                         "String",
                         char,
                         char,
-                        this.line,
-                        this.startCol,
+                        this.currentLine,
+                        this.absolutePosition,
                         this.runtime.currentFile,
                         this.runtime.currentSrc
                     )
@@ -67,25 +118,29 @@ export class Lexer {
     private nextAsSymbol() {
         while (isValidSymbol(this.peekChar())) this.nextChar();
 
-        const symbol = this.src.substring(this.tokenStart, this.pos);
+        const symbol = this.currentTokenAsString();
 
         // presume its a symbol if its not reserved
         const type = this.keyWordOrUndefined(symbol) ?? "Symbol";
 
-        this.pushToken(type, symbol);
+        if (type === "Boolean") {
+            this.pushToken(type, Boolean(symbol));
+        } else {
+            this.pushToken(type, symbol);
+        }
     }
 
     private nextAsInt() {
         while (this.isDigit(this.peekChar())) this.nextChar();
 
-        const num = this.src.substring(this.tokenStart, this.pos);
+        const num = this.currentTokenAsString();
 
         this.pushToken("Integer", Number(num));
     }
 
     private nextAsString() {
-        this.nextChar(); // skip "
-        this.tokenStart++;
+        this.absolutePosition++;
+        this.currentTokenStartPosition++; // skip "
 
         while (this.peekChar() !== '"' && !this.isEOF() && this.peekChar() !== "\n") {
             this.nextChar();
@@ -96,55 +151,77 @@ export class Lexer {
                 "Unterminated string literal",
                 new Token(
                     "String",
-                    this.src.substring(this.tokenStart, this.pos),
-                    this.src.substring(this.tokenStart, this.pos),
-                    this.line,
-                    this.startCol,
+                    this.currentTokenAsString(),
+                    this.currentTokenAsString(),
+                    this.currentLine,
+                    this.absolutePosition,
                     this.runtime.currentFile,
                     this.runtime.currentSrc
                 )
             );
         }
 
-        const str = this.src.substring(this.tokenStart, this.pos);
+        const str = this.currentTokenAsString();
 
         this.pushToken("String", str);
 
         this.nextChar(); // skip "
     }
 
-    private pushToken(type: TokenType, value?: unknown) {
-        const identifier = this.src.substring(this.tokenStart, this.pos);
+    private currentTokenAsString() {
+        return this.src.substring(this.currentTokenStartPosition, this.absolutePosition);
+    }
 
-        this.tokens.push(
-            new Token(
-                type,
-                identifier,
-                value,
-                this.line,
-                this.startCol,
-                this.runtime.currentFile,
-                this.runtime.currentSrc
-            )
-        );
+    private pushToken(type: TokenType, value?: unknown) {
+        const identifier = this.currentTokenAsString();
+
+        if (type === "Eof") {
+            this.tokens.push(
+                new Token(
+                    type,
+                    "eof",
+                    undefined,
+                    this.currentLine,
+                    this.currentTokenStartPosition,
+                    this.runtime.currentFile,
+                    this.runtime.currentSrc
+                )
+            );
+        } else {
+            this.tokens.push(
+                new Token(
+                    type,
+                    identifier,
+                    value,
+                    this.currentLine,
+                    this.currentTokenStartPosition,
+                    this.runtime.currentFile,
+                    this.runtime.currentSrc
+                )
+            );
+        }
     }
 
     private nextChar() {
-        return this.src[this.pos++];
+        return this.src[this.absolutePosition++];
     }
 
     private peekChar() {
-        return this.src[this.pos];
+        return this.src[this.absolutePosition];
     }
 
     private keyWordOrUndefined(maybeKeyword: string): TokenType | undefined {
-        const lookup = new Map([["nptr", "NullPtr"]]);
+        const lookup = new Map([
+            ["nptr", "NullPtr"],
+            ["true", "Boolean"],
+            ["false", "Boolean"],
+        ]);
 
         return lookup.get(maybeKeyword) as TokenType | undefined;
     }
 
     private isEOF() {
-        return this.pos >= this.src.length;
+        return this.absolutePosition >= this.src.length;
     }
 
     private isDigit(c: string) {
@@ -157,5 +234,30 @@ export class Lexer {
 
     private isAlphaNumeric(c: string) {
         return /^\w$/.test(c);
+    }
+
+    private ensureMatchingParens() {
+        const stack: number[] = [];
+
+        this.tokens.forEach((token, idx) => {
+            if (token.type === "StartList") {
+                stack.push(idx);
+            } else if (token.type === "EndList") {
+                if (!stack.length) {
+                    this.runtime.errorHandler.report("syntax")(
+                        "Unmatched list expression",
+                        this.tokens[idx]
+                    );
+                }
+                stack.pop();
+            }
+        });
+
+        if (stack.length) {
+            this.runtime.errorHandler.report("syntax")(
+                "Unmatched list expression",
+                this.tokens[stack.pop()!]
+            );
+        }
     }
 }

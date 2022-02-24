@@ -8,8 +8,6 @@ export class Parser {
     private current = 0;
 
     public parse() {
-        this.ensureMatchingParens();
-
         const expressions: Expr[] = [];
 
         while (!this.isEof()) {
@@ -94,27 +92,5 @@ export class Parser {
 
     private previous() {
         return this.tokens[this.current - 1];
-    }
-
-    private ensureMatchingParens() {
-        const stack = [] as number[];
-
-        this.tokens.forEach((token, idx) => {
-            if (token.type === "StartList") {
-                stack.push(idx);
-            } else if (token.type === "EndList") {
-                if (!stack.length) {
-                    this.runtime.errorHandler.report("syntax")(
-                        "Unmatched parantheses",
-                        this.peek()
-                    );
-                }
-                stack.pop();
-            }
-        });
-
-        if (stack.length) {
-            this.runtime.errorHandler.report("syntax")("Unmatched parantheses", this.peek());
-        }
     }
 }

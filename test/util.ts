@@ -1,4 +1,7 @@
+import { ListExpr, LiteralExpr, SymbolExpr } from "../src/lang/internal/parse/Expr";
+import { Token, TokenType } from "../src/lang/internal/parse/Token";
 import { Runtime } from "../src/lang/internal/runtime/runtime";
+import { Symbol } from "../src/lang/internal/runtime/symbol";
 
 export class LanguageError extends Error { }
 
