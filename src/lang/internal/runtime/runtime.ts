@@ -1,5 +1,5 @@
 import { CallStack } from "../../runtime/callstack";
-import { ErrorHandler } from "../error";
+import { ErrorHandler } from "./error";
 import { InterceptorHandler as InterceptorController } from "./interceptor";
 import { ModuleController } from "./module";
 import { SymbolTable } from "./symbol";

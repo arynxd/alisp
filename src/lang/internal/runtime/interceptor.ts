@@ -2,10 +2,11 @@ import type { SymbolExpr } from "../parse/Expr";
 import type { Runtime } from "./runtime";
 import type { Symbol } from "./symbol";
 
-export type InterceptorType = "symbol-lookup";
+export type InterceptorType = "symbol-lookup" | "error";
 
 type InterceptorEvent<T extends InterceptorType> = {
     "symbol-lookup": (symbol: SymbolExpr) => Symbol | "no-op";
+    "error": (message: string) => never
 }[T];
 
 export type Interceptor<T extends InterceptorType> = {

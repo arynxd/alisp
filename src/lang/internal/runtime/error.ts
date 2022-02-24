@@ -1,6 +1,6 @@
 import { exit } from "process";
-import type { Token } from "./parse/Token";
-import type { Runtime } from "./runtime/runtime";
+import type { Token } from "../parse/Token";
+import type { Runtime } from "./runtime";
 
 export type ErrorType = "syntax" | "runtime" | "internal" | "panic";
 
@@ -35,6 +35,12 @@ export class ErrorHandler {
     }
 
     public report<T extends ErrorType>(type: T): ReportErrorFunc<T> {
+        const interceptor = this.runtime.interceptorController.get("error")
+
+        if (interceptor) {
+            return interceptor.intercept
+        }
+        
         if (type === "syntax") {
             const fun: ReportSyntaxErrorFunc = (message, token) => {
                 console.error(`a syntax error has occurred : ${message}`);
